@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<title>Verbindungs-Check Generator</title>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
+<style>
+  body { font-family: Arial; padding: 20px; }
+  input, select, textarea { width: 100%; margin-bottom: 10px; padding: 8px; }
+  button { padding: 10px 15px; font-size: 16px; }
+</style>
+</head>
+<body>
+
+<h2>Screenshot hochladen</h2>
+<input type="file" id="imageInput" accept="image/*">
+
+<button onclick="runOCR()">OCR starten</button>
+
+<h3>Erkannte Daten (korrigierbar)</h3>
+
+<label>Auftragsnummer</label>
+<input id="nummer">
+
+<label>Standort (Adresse)</label>
+<input id="standort">
+
+<label>Filiale</label>
+<input id="filiale">
+
+<h3>Manuelle Eingaben</h3>
+
+<label>Router / Geräte IP</label>
+<input id="ip">
+
+<label>Eingang</label>
+<select id="eingang">
+  <option value="2x NP14 (2x PAB)">2x NP14 (2x PAB)</option>
+  <option value="1x NP14">1x NP14</option>
+  <option value="2x NP8">2x NP8</option>
+  <option value="1x NP8">1x NP8</option>
+  <option value="2x PAB">2x PAB</option>
+</select>
+
+<label>Kassen</label>
+<select id="kassen">
+  <option value="2x Kassenantennen">2x Kassenantennen</option>
+  <option value="1x Kassenantenne">1x Kassenantenne</option>
+  <option value="4x Kassenantennen">4x Kassenantennen</option>
+</select>
+
+<button onclick="generateText()">Text generieren</button>
+
+<h3>Ergebnis</h3>
+<textarea id="output" rows="12"></textarea>
+
+<script>
+function runOCR() {
+  const file = document.getElementById("imageInput").files[0];
+  if (!file) { alert("Bitte Screenshot auswählen"); return; }
+
+  Tesseract.recognize(file, 'deu')
+    .then(result => {
+      const text = result.data.text;
+
+      // Sehr einfache Extraktion – später kannst du es verbessern
+      document.getElementById("nummer").value =
+        (text.match(/(?:Nr|Nummer|N°)\s*[: ]?(\d{6,})/) || [,''])[1];
+
+      document.getElementById("standort").value =
+        (text.match(/\d{5}\s+[A-ZÄÖÜa-zäöüß]+.*\d+/) || [''])[0];
+
+      document.getElementById("filiale").value =
+        (text.match(/D3[A-Z0-9]{2}/) || [''])[0];
+    });
+}
+
+function generateText() {
+  const nummer = document.getElementById("nummer").value;
+  const standort = document.getElementById("standort").value;
+  const filiale = document.getElementById("filiale").value;
+  const ip = document.getElementById("ip").value;
+  const eingang = document.getElementById("eingang").value;
+  const kassen = document.getElementById("kassen").value;
+
+  const output = `
+Bitte Verbindung prüfen:
+
+Auftragsnummer:
+${nummer}
+
+Filiale:
+${filiale}
+
+Adresse:
+${standort}
+
+Eingang:
+${eingang}
+${ip}
+
+Kassen:
+${kassen}
+
+Router / Geräte IP:
+${ip}
+  `;
+
+  document.getElementById("output").value = output.trim();
+}
+</script>
+
+</body>
+</html>
